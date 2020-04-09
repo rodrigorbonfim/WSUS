@@ -1,0 +1,27 @@
+Neste Select trago status dos KBs, contendo as colunas abaixo:
+
+KB      Title                     Arrival_Date      Declined Installed Failed NotInstalled Downloaded PendingReboot Needed Total Installed/NotApplicable%
+4103712 2018-05 Security Only.... 2018-06-02 22:... 0        160       0      19           0          0             19      179  160 
+
+
+
+
+   SELECT  
+		aUpdate.KnowledgebaseArticle as KB,
+        aUpdate.DefaultTitle as "Title",
+		aUpdate.ArrivalDate as "Arrival Date",
+		aUpdate.IsDeclined as Declined,
+		tbSummary.Installed,
+		tbSummary.Failed,
+		tbSummary.NotInstalled,
+		tbSummary.Downloaded,
+		tbSummary.InstalledPendingReboot as "PendingReboot",
+		tbSummary.Downloaded + tbSummary.NotInstalled + tbSummary.InstalledPendingReboot  as "Needed",
+		( SELECT  count([TargetID]) as target FROM [SUSDB].[dbo].[tbComputerTarget]) as "Total",
+		(100-((tbSummary.Downloaded + tbSummary.NotInstalled + tbSummary.InstalledPendingReboot) * 100)/ 
+		( SELECT  count([TargetID]) as target FROM [SUSDB].[dbo].[tbComputerTarget])) as "Installed/NotApplicable %"
+    FROM
+        PUBLIC_VIEWS.vUpdate AS aUpdate   INNER JOIN
+		dbo.tbUpdate As tbUpdate On tbUpdate.UpdateId = aUpdate.UpdateId LEFT JOIN
+		dbo.tbUpdateSummaryForAllComputers as tbSummary On tbSummary.LocalUpdateID = tbUpdate.LocalUpdateID 
+		order by aupdate.ArrivalDate
