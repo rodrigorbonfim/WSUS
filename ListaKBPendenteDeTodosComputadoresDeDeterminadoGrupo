@@ -1,0 +1,41 @@
+Neste exemplo estou listando a quantidade de KBs pendentes de um determinado grupo do WSUS
+Em minha estrutura tenho por exemplo
+-DATACENTER
+---Producao
+---Homologacao
+-SEDE
+---Contabilidade
+---Tesouraria
+
+No select estou filtrando todos os computadores que estão em DATACENTER, trazendo tanto Produção quanto Homologação com as colunas Abaixo (exemplo):
+Hostname   ID   IP          Pendentes   Membro        Grupo
+SERVER1    10   10.0.0.5    37          DATACENTER    Producao
+SERVER2    15   10.0.1.4     2          DATACENTER    Homologacao
+
+
+
+
+SELECT  vct.Name as 'Hostname'
+		,tct.TargetID as 'ID'
+		,tct.IPAddress as 'IP'
+	  ,dSummary.NotInstalled + dSummary.Downloaded + dSummary.InstalledPendingReboot as 'Pendentes'
+	  ,vctg.Name as 'Membro'
+	  ,		(SELECT avctg.Name as 'a'
+				FROM [SUSDB].[PUBLIC_VIEWS].[vComputerGroupMembership] as avcgm inner join
+					 [SUSDB].[PUBLIC_VIEWS].[vComputerTargetGroup] as avctg on 
+						(avctg.ComputerTargetGroupId =  avcgm.ComputerTargetGroupId) inner join
+					 [SUSDB].[PUBLIC_VIEWS].[vComputerTarget] as avct on 
+						(avct.ComputerTargetId = avcgm.ComputerTargetId) inner join
+					 dbo.tbComputerTarget as atct on
+						(avct.Name = atct.FullDomainName) inner join
+					 tbComputerSummaryForMicrosoftUpdates AS adSummary on (adSummary.TargetID = atct.TargetID)
+			where  avct.Name =vct.Name and IsExplicitMember = 1 and avctg.Name <> 'All Computers') as 'Grupo'
+  FROM	[SUSDB].[PUBLIC_VIEWS].[vComputerGroupMembership] as vcgm inner join
+		[SUSDB].[PUBLIC_VIEWS].[vComputerTargetGroup] as vctg on 
+			(vctg.ComputerTargetGroupId =  vcgm.ComputerTargetGroupId) inner join
+		[SUSDB].[PUBLIC_VIEWS].[vComputerTarget] as vct on 
+			(vct.ComputerTargetId = vcgm.ComputerTargetId) inner join
+  dbo.tbComputerTarget as tct on
+  vct.Name = tct.FullDomainName inner join
+  tbComputerSummaryForMicrosoftUpdates AS dSummary on (dSummary.TargetID = tct.TargetID)
+  where  vctg.Name like '%DATACENTER%' order by Pendentes DESC
