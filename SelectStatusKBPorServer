@@ -1,0 +1,17 @@
+
+
+ Select vct.Name, vuii.UpdateId, vu.DefaultTitle,vu.KnowledgebaseArticle ,vu.MsrcSeverity, vu.ArrivalDate,
+  'Status' = case
+  when vuii.state = 1 then 'Nao Compativel'
+  when vuii.state = 2 then 'Nao Instalado'
+  when vuii.state = 3 then 'Download efetuado'
+  when vuii.state = 4 then 'Instalado'
+  when vuii.State = 5 then 'Falhou'
+  end, vuii.state
+  from [SUSDB].[PUBLIC_VIEWS].[vComputerTarget] as vct inner join
+  [SUSDB].[PUBLIC_VIEWS].[vUpdateInstallationInfo] as vuii on 
+  vct.ComputerTargetId = vuii.ComputerTargetID inner join
+  [SUSDB].[PUBLIC_VIEWS].[vUpdate] as vu on
+  vuii.UpdateId = vu.UpdateId
+  
+   where vct.name like '%HOSTNAME_SERVER%' and vuii.State <> 1 order by vu.ArrivalDate
